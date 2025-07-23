@@ -88,34 +88,44 @@ const displayMovement = function (movements) {
   });
 };
 
-const calcDisplayBalance = function (movements) {
-  const balance = movements.reduce(function (acc, movements) {
-    return (acc += movements);
+const calcDisplayBalance = function (currentAccount) {
+  const currentAccountMovements = currentAccount.movements;
+  const balance = movements.reduce(function (acc, currentAccountMovements) {
+    return (acc += currentAccountMovements);
   }, 0);
-
+  currentAccount.balance = balance;
   labelBalance.textContent = `R ${balance} Rands`;
 };
 
-const calcDisplaySummary = function (movements) {
-  const incomes = movements
+const calcDisplaySummary = function (currentAccount) {
+  const incomes = currentAccount.movements
     .filter(mov => mov > 0)
     .reduce((acc, mov) => acc + mov, 0);
 
   labelSumIn.textContent = `R ${incomes} `;
 
-  const deposit = movements
+  const deposit = currentAccount.movements
     .filter(mov => mov < 0)
     .reduce((acc, mov) => acc + mov, 0);
 
   labelSumOut.textContent = `R  ${Math.abs(deposit)}`;
 
-  const interest = movements
+  const interest = currentAccount.movements
     .filter(mov => mov > 0)
-    .map(deposits => (deposits * 1.2) / 100)
+    .map(deposits => (deposits * currentAccount.interestRate) / 100)
     .filter(int => int >= 1)
     .reduce((acc, int) => acc + int, 0);
 
   labelSumInterest.textContent = `R ${interest}`;
+};
+const updateUI = function (currentAccount) {
+  // Display movements
+  displayMovement(currentAccount.movements);
+  // Display balance
+  calcDisplayBalance(currentAccount);
+  // Display summary
+  calcDisplaySummary(currentAccount);
+  console.log('Login');
 };
 
 //Event handler
@@ -135,16 +145,36 @@ btnLogin.addEventListener('click', function (e) {
     }`;
 
     containerApp.style.opacity = '100';
-    // Display movements
-    displayMovement(currentAccount.movements);
-    // Display balance
-    calcDisplayBalance(currentAccount.movements);
-    // Display summary
-    calcDisplaySummary(currentAccount.movements);
-    console.log('Login');
+
+    // inputs
+    inputLoginUsername.value = '';
+    inputLoginPin.value = '';
+    inputLoginPin.blur();
+
+    updateUI(currentAccount);
   }
 });
 
+btnTransfer.addEventListener('click', function (e) {
+  e.preventDefault();
+  const amount = Number(inputTransferAmount.value);
+  const receiverAcc = accounts.find(
+    acc => acc.userName === inputTransferTo.value
+  );
+  inputTransferAmount.value = inputTransferTo.value = '';
+  if (
+    amount > 0 &&
+    currentAccount.balance > amount &&
+    receiverAcc &&
+    receiverAcc?.userName !== currentAccount.userName
+  ) {
+    console.log('Transfer vaild');
+    currentAccount.movements.push(-amount);
+    receiverAcc.movements.push(amount);
+
+    updateUI(currentAccount);
+  }
+});
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 // LECTURES
